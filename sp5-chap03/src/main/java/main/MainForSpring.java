@@ -4,15 +4,25 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
 import assembler.Assembler;
+import config.AppCtx;
 import spring.ChangePasswordService;
 import spring.DuplicateMemberException;
+import spring.MemberInfoPrinter;
+import spring.MemberListPrinter;
 import spring.MemberRegisterService;
 import spring.RegisterRequest;
 import spring.WrongIdPasswordException;
 
 public class MainForSpring {
+	
+	private static ApplicationContext ctx = null;
+	
 	public static void main(String[] args) throws IOException {
+		ctx = new AnnotationConfigApplicationContext(AppCtx.class);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		
 		while(true) {
@@ -28,19 +38,24 @@ public class MainForSpring {
 			} else if (command.startsWith("change ")) {
 				processChangCommand(command.split(" "));
 				continue;
-			}printHelp();
+			} else if (command.equals("list")) {
+				processListCommand();
+				continue;
+			}else if (command.startsWith("info ")) {
+				processInfoCommand(command.split(" "));
+				continue;
+			}
+			printHelp();
 		}
 		
 	}
-	
-	private static Assembler assembler = new Assembler();
 	
 	private static void processNewCommand(String[] arg) {
 		if(arg.length != 5) { //배열 길이가 5가 아니라면 
 			printHelp(); // 실행하고 끝내버린다. 
 			return;
 		}
-		MemberRegisterService regSvc = assembler.getMemberRegisterService();
+		MemberRegisterService regSvc = ctx.getBean("memberRegSvc", MemberRegisterService.class);
 		RegisterRequest req = new RegisterRequest();
 		req.setEmail(arg[1]);
 		req.setName(arg[2]);
@@ -65,13 +80,19 @@ public class MainForSpring {
 			printHelp();
 			return;
 		}
-		ChangePasswordService changePwdSvc = assembler.getChangePasswordService();
+		ChangePasswordService changePwdSvc = ctx.getBean("changePwdSvc", ChangePasswordService.class);
+		
 		try {
 			changePwdSvc.changePassword(arg[1], arg[2], arg[3]);
 			System.out.println("암호를 변경했습니다.");
 		}catch(WrongIdPasswordException e) {
 			System.out.println("이메일과 암호가 일치하지 않습니다.");
 		}
+	}
+	
+	private static void processListCommand() {
+		MemberListPrinter listPrinter = ctx.getBean("listPrinter",MemberListPrinter.class);
+		listPrinter.printAll();
 	}
 	
 	private static void printHelp() {
@@ -81,6 +102,14 @@ public class MainForSpring {
 		System.out.println("new 이메일 이름 암호 암호확인");
 		System.out.println("change 이메일 현재비번 변경비번");
 		System.out.println();
+	}
+	private static void processInfoCommand(String[] arg) {
+		if(arg.length != 2) {
+			printHelp();
+			return;
+		}
+		MemberInfoPrinter infoPrinter = ctx.getBean("infoPrinter", MemberInfoPrinter.class);
+		infoPrinter.printMemberInfo(arg[1]);
 	}
 	
 	

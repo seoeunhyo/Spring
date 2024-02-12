@@ -65,6 +65,7 @@ public class MainForAssembler {
 			printHelp();
 			return;
 		}
+		
 		ChangePasswordService changePwdSvc = assembler.getChangePasswordService();
 		try {
 			changePwdSvc.changePassword(arg[1], arg[2], arg[3]);
